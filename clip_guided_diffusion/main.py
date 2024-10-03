@@ -101,7 +101,6 @@ class OpenAIVDenoiser(K.external.DiscreteVDDPMDenoiser):
             return model_output.chunk(2, dim=1)[0]
         return model_output
 
-
 def load_diffusion_model(model_path, device="cpu", model_type="eps"):
     model_config = script_util.model_and_diffusion_defaults()
     model_config.update(
@@ -563,6 +562,12 @@ def main():
         type=float,
         default=0.1,
         help="the maximum step size",
+    )
+    p.add_argument(
+        "--min-sigma",
+        type=float,
+        default=0.01,
+        help="the minimum noise level when using an init image",
     )
     p.add_argument(
         "--model-type",
