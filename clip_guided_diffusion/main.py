@@ -22,10 +22,17 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.transforms import functional as TF
 from tqdm.auto import tqdm
-from loss import tv_loss
+
 
 print = tqdm.external_write_mode()(print)
 srgb_profile = (Path(__file__).resolve().parent / "sRGB Profile.icc").read_bytes()
+
+def tv_loss(input):
+    """L2 total variation loss, as in Mahendran et al."""
+    input = F.pad(input, (0, 1, 0, 1), 'replicate')
+    x_diff = input[..., :-1, 1:] - input[..., :-1, :-1]
+    y_diff = input[..., 1:, :-1] - input[..., :-1, :-1]
+    return (x_diff**2 + y_diff**2).mean([1, 2, 3])
 
 
 def download_file(url, root, expected_sha256):
