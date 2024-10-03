@@ -367,6 +367,18 @@ class CLIPWrapper(nn.Module):
         image_embeds = self.model.encode_image(cutouts)
         return spherical_average(image_embeds)
 
+# Helper functions
+def sigma_to_t(sigma):
+    return -torch.log(sigma)
+
+def t_to_sigma(t):
+    return torch.exp(-t)
+
+def get_skip_sigma(sigma_min, sigma_max, skip_fraction):
+    t_max = sigma_to_t(sigma_min)
+    t_min = sigma_to_t(sigma_max)
+    t_skip = t_min + skip_fraction * (t_max - t_min)
+    return t_to_sigma(t_skip)
 
 @torch.no_grad()
 def sample_dpm_guided(
@@ -390,14 +402,7 @@ def sample_dpm_guided(
     )
     if solver_type not in {"euler", "midpoint", "heun", "dpm3"}:
         raise ValueError('solver_type must be "euler", "midpoint", "heun", or "dpm3"')
-
-    # Helper functions
-    def sigma_to_t(sigma):
-        return -torch.log(sigma)
-
-    def t_to_sigma(t):
-        return torch.exp(-t)
-
+    
     def phi_1(h):
         return torch.expm1(-h)
 
@@ -501,6 +506,10 @@ def main():
         choices=clip.available_models(),
         help="the CLIP model to use",
     )
+    
+    
+    p.add_argument('--skip-fraction', type=float, default=0.0, help='fraction of timesteps to skip (0.0 to 1.0)')
+    
     p.add_argument(
         "--clip-scale",
         "-cs",
@@ -688,11 +697,16 @@ def main():
     if args.init is None:
         init_sigma = sigma_max
         x = torch.zeros([1, 3, args.size[1], args.size[0]], device=device)
-    else:
+    else:        
         print("Loading init image.")
-        init_sigma = min(max(args.init_sigma, sigma_min), sigma_max)
+        if args.skip_fraction > 0:
+            init_sigma = get_skip_sigma(sigma_min, sigma_max, args.skip_fraction)
+        else:
+            init_sigma = args.init_sigma
+        init_sigma = min(max(init_sigma, sigma_min), sigma_max)
+        print(f"Init Sigma is {init_sigma:0.3f}")
         init = Image.open(args.init).convert("RGB").resize(args.size, Image.BICUBIC)
-        x = TF.to_tensor(init).to(device)[None] * 2 - 1
+        x = TF.to_tensor(init).to(device)[None] * 2 - 1                
 
     # Draw random noise
     torch.manual_seed(args.seed)
