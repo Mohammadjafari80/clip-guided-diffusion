@@ -564,7 +564,7 @@ def main():
         help="the maximum step size",
     )
     p.add_argument(
-        "--min-sigma",
+        "--sigma-min",
         type=float,
         default=0.01,
         help="the minimum noise level when using an init image",
@@ -626,6 +626,8 @@ def main():
     else:
         model = load_diffusion_model(checkpoint, device=device, model_type=args.model_type)
         sigma_min, sigma_max = model.sigmas[0].item(), model.sigmas[-1].item()
+        
+    sigma_min = args.sigma_min
     size_fac = (args.size[0] * args.size[1]) / (512 * 512)
 
     # Load CLIP
