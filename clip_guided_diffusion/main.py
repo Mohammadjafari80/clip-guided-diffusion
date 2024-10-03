@@ -367,12 +367,14 @@ class CLIPWrapper(nn.Module):
         image_embeds = self.model.encode_image(cutouts)
         return spherical_average(image_embeds)
 
-# Helper functions
+
+import math
+
 def sigma_to_t(sigma):
-    return -torch.log(sigma)
+    return -math.log(sigma)
 
 def t_to_sigma(t):
-    return torch.exp(-t)
+    return math.exp(-t)
 
 def get_skip_sigma(sigma_min, sigma_max, skip_fraction):
     t_max = sigma_to_t(sigma_min)
@@ -403,6 +405,13 @@ def sample_dpm_guided(
     if solver_type not in {"euler", "midpoint", "heun", "dpm3"}:
         raise ValueError('solver_type must be "euler", "midpoint", "heun", or "dpm3"')
     
+    # Helper functions
+    def sigma_to_t(sigma):
+        return -torch.log(sigma)
+
+    def t_to_sigma(t):
+        return torch.exp(-t)
+
     def phi_1(h):
         return torch.expm1(-h)
 
