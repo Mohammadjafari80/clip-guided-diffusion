@@ -22,6 +22,7 @@ from torch import nn
 from torch.nn import functional as F
 from torchvision.transforms import functional as TF
 from tqdm.auto import tqdm
+from loss import tv_loss
 
 print = tqdm.external_write_mode()(print)
 srgb_profile = (Path(__file__).resolve().parent / "sRGB Profile.icc").read_bytes()
@@ -524,6 +525,15 @@ def main():
         type=float,
         nargs="+",
         default=[2000.0],
+        help="the total variation loss scale",
+    )
+    
+    p.add_argument(
+        "--tv-loss-scale",
+        "-cs",
+        type=float,
+        nargs="+",
+        default=200.0,
         help="the CLIP guidance scale",
     )
     p.add_argument("--compile", action="store_true", help="torch.compile() the model")
@@ -675,6 +685,10 @@ def main():
                 image_embed = wrap(denoised)
                 loss_cur = dist(image_embed, target) ** 2 / 2
                 loss += loss_cur * scale * size_fac
+                
+            # Add TV loss for smoothness
+            loss += tv_loss(denoised) * args.tv_loss_scale  # Adjust the weight for TV loss as needed
+            
             return loss
 
         grad = torch.autograd.functional.vjp(loss_fn, x)[1]
