@@ -532,15 +532,14 @@ def main():
         type=float,
         nargs="+",
         default=[2000.0],
-        help="the total variation loss scale",
+        help="the CLIP guidance scale",
     )
     
     p.add_argument(
         "--tv-loss-scale",
         type=float,
-        nargs="+",
         default=200.0,
-        help="the CLIP guidance scale",
+        help="the total variation loss scale",
     )
     p.add_argument("--compile", action="store_true", help="torch.compile() the model")
     p.add_argument(
