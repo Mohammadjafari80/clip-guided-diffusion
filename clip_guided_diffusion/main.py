@@ -530,7 +530,6 @@ def main():
     
     p.add_argument(
         "--tv-loss-scale",
-        "-cs",
         type=float,
         nargs="+",
         default=200.0,
