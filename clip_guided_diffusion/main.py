@@ -692,7 +692,7 @@ def main():
                 loss += loss_cur * scale * size_fac
                 
             # Add TV loss for smoothness
-            loss += tv_loss(denoised) * args.tv_loss_scale  # Adjust the weight for TV loss as needed
+            loss += tv_loss(denoised).sum() * args.tv_loss_scale  # Adjust the weight for TV loss as needed
             
             return loss
 
